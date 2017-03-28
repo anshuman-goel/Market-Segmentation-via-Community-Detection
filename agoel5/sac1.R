@@ -151,9 +151,9 @@ updatingsimA<-function(community)
 #Phase 2
 phase2<-function()
 {
-  #iterations<-5
+  iterations_p2<-15
   
-  while(length(unique(initial))>9)
+  while(iterations_p2>0 && vcount(graph)>1)
   {
     community<-phase1(graph)
     mapping<-mapping(community)
@@ -162,6 +162,7 @@ phase2<-function()
     graph<-contract.vertices(graph,mapping)
     graph<-simplify(graph, remove.multiple = TRUE, remove.loops = TRUE)
     updatingsimA(community)
+    iterations_p2<-iterations_p2-1
     #print(graph)
     #print(vcount(graph))
   }
