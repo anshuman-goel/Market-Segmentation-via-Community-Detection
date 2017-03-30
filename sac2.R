@@ -5,10 +5,10 @@ library('proxy')
 #Reading alpha value
 args<-commandArgs(trailingOnly = TRUE)
 alpha=as.numeric(args[1])
-#setwd(getwd())
+
 #Reading files and building graph
-attrib<-read.csv("./data/fb_caltech_small_attrlist.csv")
-graph<-read.graph("./data/fb_caltech_small_edgelist.txt","edgelist")
+attrib<-read.csv("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\data\\fb_caltech_small_attrlist.csv")
+graph<-read.graph("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\data\\fb_caltech_small_edgelist.txt","edgelist")
 
 
 #Computing Similarity matrix
@@ -16,16 +16,20 @@ simA<<-as.matrix(simil(attrib,method = "cosine"))
 
 #Phase 1
 initial<<-1:vcount(graph)
-
+old_mod<<--Inf
 
 phase1<-function(graph)
 {
   iterations<-15
   community<-1:vcount(graph)
-  new_mod<-modularity(graph,community)
-  old_mod<--Inf
-  while(old_mod<new_mod && iterations>0)
+  temp_comm<-community
+  #new_mod<-modularity(graph,community)
+  
+  continue<-TRUE
+  #old_mod<new_mod && iterations>0
+  while(continue)
   {
+    temp_comm<-community
     for(i in 1:length(community)-1)
     {
       max_delta<--Inf
@@ -39,9 +43,9 @@ phase1<-function(graph)
             new_community<-rep(community)
             new_community[i]<-j
             #print(c(i,j,length(community)))
-            delta<-(alpha*(modularity(graph,new_community)-mod)+(1-alpha)*simA[i,j])/length(unique(community))
+            delta<-(alpha*(modularity(graph,new_community)-mod)+(1-alpha)*simA[i,j])
             
-            if(length(delta)!=0 && delta>max_delta && delta>0)
+            if(length(delta)!=0 && delta>=max_delta && delta>=0)
             {
               max_delta<-delta
               max_j<-j
@@ -55,11 +59,27 @@ phase1<-function(graph)
 
     }
     #print(community)
-    old_mod<-new_mod
+    #old_mod<-new_mod
     new_mod<-modularity(graph,community)
     iterations<-iterations-1
     #print(length(unique(community)))
+    print(new_mod)
     #break;
+    if(old_mod<new_mod && iterations>0)
+    {
+      print(old_mod)
+      
+      old_mod<<-new_mod
+    }
+    else
+    {
+      continue<-FALSE
+      print(temp_comm)
+      if(iterations==14)
+      {
+        community<-temp_comm
+      }
+    }
   }
   community
 }
@@ -171,7 +191,7 @@ phase2<-function()
   
   #Writing to the file
   
-  fileName<-paste("./communities",alpha,sep="_")
+  fileName<-paste("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\communities",alpha,sep="_")
   fileName<-paste(fileName,"txt",sep=".")
   fileptr<-file(fileName,"w")
   

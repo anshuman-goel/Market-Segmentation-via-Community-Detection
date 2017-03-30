@@ -5,10 +5,10 @@ library('proxy')
 #Reading alpha value
 args<-commandArgs(trailingOnly = TRUE)
 alpha=as.numeric(args[1])
-
+#setwd(getwd())
 #Reading files and building graph
-attrib<-read.csv("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\data\\fb_caltech_small_attrlist.csv")
-graph<-read.graph("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\data\\fb_caltech_small_edgelist.txt","edgelist")
+attrib<-read.csv("./data/fb_caltech_small_attrlist.csv")
+graph<-read.graph("./data/fb_caltech_small_edgelist.txt","edgelist")
 
 
 #Computing Similarity matrix
@@ -17,13 +17,14 @@ simA<<-as.matrix(simil(attrib,method = "cosine"))
 #Phase 1
 initial<<-1:vcount(graph)
 
+
 phase1<-function(graph)
 {
   iterations<-15
   community<-1:vcount(graph)
   new_mod<-modularity(graph,community)
   old_mod<--Inf
-  while(old_mod!=new_mod && iterations>0)
+  while(old_mod<new_mod && iterations>0)
   {
     for(i in 1:length(community)-1)
     {
@@ -57,6 +58,7 @@ phase1<-function(graph)
     old_mod<-new_mod
     new_mod<-modularity(graph,community)
     iterations<-iterations-1
+    #print(length(unique(community)))
     #break;
   }
   community
@@ -169,7 +171,7 @@ phase2<-function()
   
   #Writing to the file
   
-  fileName<-paste("E:\\NCSU\\Semester 2\\Algorithms for Data Guided Business Intelligence\\Projects\\Market Segmentation via Community Detection\\06.Topic-7.Project-6.MarketSegmentation.AttributedGraphCommunityDetection\\communities",alpha,sep="_")
+  fileName<-paste("./communities",alpha,sep="_")
   fileName<-paste(fileName,"txt",sep=".")
   fileptr<-file(fileName,"w")
   
