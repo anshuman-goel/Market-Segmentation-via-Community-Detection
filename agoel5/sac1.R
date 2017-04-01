@@ -5,7 +5,7 @@ library('proxy')
 #Reading alpha value
 args<-commandArgs(trailingOnly = TRUE)
 alpha=as.numeric(args[1])
-#setwd(getwd())
+
 #Reading files and building graph
 attrib<-read.csv("./data/fb_caltech_small_attrlist.csv")
 graph<-read.graph("./data/fb_caltech_small_edgelist.txt","edgelist")
@@ -13,6 +13,9 @@ graph<-read.graph("./data/fb_caltech_small_edgelist.txt","edgelist")
 
 #Computing Similarity matrix
 simA<<-as.matrix(simil(attrib,method = "cosine"))
+simb<<-simA
+
+#print(simA)
 
 #Phase 1
 initial<<-1:vcount(graph)
@@ -22,11 +25,30 @@ phase1<-function(graph)
 {
   iterations<-15
   community<-1:vcount(graph)
-  new_mod<-modularity(graph,community)
-  old_mod<--Inf
-  while(old_mod<new_mod && iterations>0)
+  temp_comm<-community
+  old_mod<<--Inf
+  #new_mod<-modularity(graph,community)
+  sim<-c()
+  for(k in 1:nrow(simA))
   {
-    for(i in 1:length(community)-1)
+    sum<-0
+    for(m in 1:ncol(simA))
+    {
+      
+      if(k!=m)
+      {
+        #print(simA[j,m])
+        sum<-sum+simA[k,m]
+      }
+    }
+    sim<-c(sim,sum)
+  }
+  continue<-TRUE
+  #old_mod<new_mod && iterations>0
+  while(continue)
+  {
+    temp_comm<-community
+    for(i in 1:(length(community)-1))
     {
       max_delta<--Inf
       max_j<-0
@@ -38,11 +60,14 @@ phase1<-function(graph)
           {
             new_community<-rep(community)
             new_community[i]<-j
-            #print(c(i,j,length(community)))
-            delta<-(alpha*(modularity(graph,new_community)-mod)+(1-alpha)*simA[i,j])/length(unique(community))
+            #print(nrow(simA))
             
-            if(length(delta)!=0 && delta>max_delta && delta>0)
+            den<-length(unique(community))*length(community[community==1:length(community)]==TRUE)
+            delta<-alpha*(modularity(graph,new_community)-mod)+((1-alpha)*sim[j])/den
+            
+            if(length(delta)!=0 && delta>max_delta &&delta>0)
             {
+              #print(delta)
               max_delta<-delta
               max_j<-j
             }
@@ -50,16 +75,46 @@ phase1<-function(graph)
       }
       if(max_j!=0)
       {
-        community[i]<-max_j
+        #print(max_j)
+        #print(j)
+        if(community[max_j]>community[i])
+        {
+          community[max_j]<-community[i]
+        }
+        else
+        {
+          community[i]<-community[max_j]
+        }
       }
 
     }
-    #print(community)
-    old_mod<-new_mod
     new_mod<-modularity(graph,community)
     iterations<-iterations-1
     #print(length(unique(community)))
-    #break;
+    # print("new")
+    # print(new_mod)
+    # if(iterations==0 )
+    # {
+    #   continue<-FALSE
+    # }
+    if(old_mod<new_mod && iterations>0 && new_mod>0)
+    {
+      #print(old_mod)
+
+      old_mod<<-new_mod
+    }
+    else
+    {
+
+      continue<-FALSE
+      # print(temp_comm)
+      # print("iter")
+      # print(iterations)
+      if(iterations>12 && alpha!=0)
+      {
+        community<-temp_comm
+      }
+    }
   }
   community
 }
@@ -148,15 +203,35 @@ updatingsimA<-function(community)
     simA[i,community[i]]<<-temp
     simA[community[i],i]<<-temp
   }
+  # simb<<-simA
+  # lu_comm<-length(unique(community))
+  # simA<<-matrix(0, nrow = lu_comm, ncol = lu_comm)
+  # s_comm<-sort(unique(community))
+  # for(i in 1:lu_comm)
+  # {
+  #   for(j in 1:lu_comm)
+  #   {
+  #     sum<-0
+  #     for(k in 1:length(community))
+  #     {
+  #       if(community[k]==s_comm[i] && is.na(simb[k,j])==FALSE)
+  #       {
+  #         sum<-sum+simb[k,j]
+  #       }
+  #     }
+  #   }
+  #   simA[i,j]<<-sum
+  # }
 }
 
 #Phase 2
 phase2<-function()
 {
   iterations_p2<-15
-  
+
   while(iterations_p2>0 && vcount(graph)>1)
   {
+    old_mod<<--Inf
     community<-phase1(graph)
     mapping<-mapping(community)
     print(length(unique(initial)))
@@ -165,6 +240,11 @@ phase2<-function()
     graph<-simplify(graph, remove.multiple = TRUE, remove.loops = TRUE)
     updatingsimA(community)
     iterations_p2<-iterations_p2-1
+    # print(modularity(graph,community))
+    # if(modularity(graph,community)<=0)
+    # {
+    #   break
+    # }
     #print(graph)
     #print(vcount(graph))
   }
